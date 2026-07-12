@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Komopnder</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/inter/3.19.3/inter.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { background: #F5F7FA; color: #333; height: 100vh; overflow: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
+    .dark-mode { background: #121212; color: #E0E0E0; }
+
+    /* Preload Splash Screen */
+    #preloadSplash {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: white;
+      margin: 0;
+      overflow: hidden;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+    }
+    #preloadSplash .wrapper {
+      position: relative;
+      width: 800px;
+      height: 400px;
+    }
+    #preloadSplash .outer-circle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 250px;
+      height: 250px;
+      background-color: black;
+      border-radius: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      animation: 
+        shrinkToSquare 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 3.5s,
+        moveToStart 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 4s,
+        writeText 2s linear forwards 4.5s,
+        fadeOut 0.3s ease-in forwards 6.5s;
+    }
+    #preloadSplash .inner-circle {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 180px;
+      height: 180px;
+      background-color: white;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: 
+        fadeInScale 0.5s ease forwards 1s,
+        fadeOut 0.5s ease forwards 3.5s;
+    }
+    #preloadSplash .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      animation: collapse 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards 2.5s;
+    }
+    #preloadSplash .rectangle {
+      background-color: black;
+      opacity: 0;
+      transform: scale(0);
+      animation: popInPreload 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    #preloadSplash .rectangle:nth-child(1) { width: 36px; height: 40px; animation-delay: 1.5s; }
+    #preloadSplash .rectangle:nth-child(2) { width: 34px; height: 38px; animation-delay: 1.7s; }
+    #preloadSplash .rectangle:nth-child(3) { width: 38px; height: 42px; animation-delay: 1.9s; }
+    #preloadSplash .rectangle:nth-child(4) { width: 32px; height: 36px; animation-delay: 2.1s; }
+    #preloadSplash .text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      color: black;
+      font-family: Arial, sans-serif;
+      font-size: 42px;
+      white-space: nowrap;
+      clip-path: inset(0 100% 0 0);
+      animation: revealText 2s linear forwards 4.5s;
+    }
+
+    /* Chat App Styles */
+    #chatApp { width: 100vw; height: 100vh; display: block; }
+    .chat-container { width: 100%; height: 100%; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-header { padding: 0.5rem 1rem; display: flex; align-items: center; gap: 1rem; background: #fff; border-bottom: 1px solid #E0E0E0; position: fixed; top: 0; left: 0; right: 0; z-index: 10; height: 60px; }
+    .ai-avatar { width: 48px; height: 48px; position: relative; overflow: hidden; border-radius: 50%; flex-shrink: 0; }
+    .program-logo { position: absolute; width: 250px; height: 250px; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.11) rotate(-45deg); transform-origin: center; }
+    .program-logo .outer-circle { display: flex; align-items: center; justify-content: center; width: 250px; height: 250px; background: #000; border-radius: 50%; }
+    .program-logo .inner-circle { position: absolute; display: flex; align-items: center; justify-content: center; width: 180px; height: 180px; background: #fff; border-radius: 50%; }
+    .program-logo .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .program-logo .rectangle { background: #000; }
+    .program-logo .rectangle:nth-child(1) { width: 36px; height: 40px; }
+    .program-logo .rectangle:nth-child(2) { width: 34px; height: 38px; }
+    .program-logo .rectangle:nth-child(3) { width: 38px; height: 42px; }
+    .program-logo .rectangle:nth-child(4) { width: 32px; height: 36px; }
+    .header-text h1 { font-size: 1.2rem; color: #333; font-weight: 600; }
+    .header-text p { font-size: 0.5rem; color: #777; margin-top: 0.25rem; }
+    .voice-read-icon { cursor: pointer; font-size: 1rem; color: #777; margin-right: 0.75rem; }
+    .voice-read-icon:hover { color: #007bff; }
+    .settings-icon { cursor: pointer; font-size: 1rem; color: #777; margin-left: auto; flex-shrink: 0; }
+    .settings-icon:hover { color: #007bff; }
+    .switch-button { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #777; transition: color 0.3s ease; }
+    .switch-button:hover { color: #007bff; }
+    .settings-panel { position: absolute; top: 70px; right: 10px; background: #fff; border: 1px solid #E0E0E0; border-radius: 10px; padding: 0.75rem; display: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 100; }
+    .theme-toggle, .clear-chat { background: none; border: none; cursor: pointer; font-size: 1rem; color: #777; padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease; }
+    .theme-toggle:hover, .clear-chat:hover { color: #007bff; }
+    .chat-messages { 
+      margin-top: 60px; 
+      height: calc(100vh - 60px - 82px - 30px); 
+      padding: 0.75rem 1rem;
+      padding-bottom: 30px;
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.75rem; 
+      position: relative; 
+      scroll-behavior: smooth; 
+    }
+    .chat-messages::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50px; pointer-events: none; z-index: 1; }
+    .message { display: flex; gap: 0.5rem; opacity: 0; transform: translateY(10px); animation: fadeIn 0.35s ease forwards; position: relative; max-width: 90%; }
+    .message.user-message { margin-left: auto; flex-direction: row-reverse; }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+    .message-content { padding: 0.75rem 1rem; border-radius: 12px; color: #333; font-size: 0.95rem; line-height: 1.5; position: relative; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); min-height: 28px; word-wrap: break-word; }
+    .ai-message .message-content { background: transparent; }
+    .user-message .message-content { background: #F1F3F5; }
+    .typing-cursor { display: inline-block; width: 8px; height: 8px; margin-left: 2px; background: #333; transform: rotate(45deg); animation: blink 1s infinite; }
+    @keyframes blink { 0%, 50%, 100% { opacity: 1; } 25%, 75% { opacity: 0; } }
+    .chat-input { padding: 1rem; background: #fff; border-top: 1px solid #E0E0E0; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; border-top-left-radius: 20px; border-top-right-radius: 20px; }
+    .input-container { display: flex; gap: 0.75rem; position: relative; max-width: 1000px; margin: 0 auto; }
+    .input-field { flex-grow: 1; background: transparent; border: none; padding: 0.75rem 1.25rem; font-size: 1rem; color: #333; resize: none; height: 50px; max-height: 150px; transition: all 0.3s ease; }
+    .input-field:focus { outline: none; }
+    .input-field::placeholder { color: #999; }
+    .send-button { background: #007bff; color: #fff; border: none; border-radius: 12px; padding: 0 1rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; height: 50px; }
+    .send-button:hover { background: #0069d9; }
+    .send-button:disabled { background: #CCC; color: #666; cursor: not-allowed; }
+    #voiceButton { background: #007bff; color: #fff; border: none; border-radius: 12px; padding: 0 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; height: 50px; margin-left: 0.75rem; }
+    #voiceButton:hover { background: #0069d9; }
+    #voiceButton.listening { background: #d9534f; }
+    .typing-indicator { display: flex; gap: 0.5rem; padding: 0.75rem; background: #fff; border-radius: 16px; width: fit-content; position: relative; }
+    .chat-messages::-webkit-scrollbar { width: 6px; }
+    .chat-messages::-webkit-scrollbar-track { background: #F0F0F0; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #CCC; border-radius: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb:hover { background: #BBB; }
+    @media (max-width: 768px) { 
+      .chat-container { width: 100%; } 
+      .chat-messages { padding: 1rem; } 
+      .message { max-width: 90%; } 
+      .input-field { padding: 0.75rem 1rem; } 
+      .send-button, #voiceButton { padding: 0 1.25rem; } 
+    }
+    #voiceInteraction { display: none; width: 100vw; height: 100vh; background-color: #F5F7FA; color: #333; overflow: hidden; transition: background-color 0.3s ease, color 0.3s ease; display: flex; justify-content: center; align-items: center; position: relative; }
+    #voiceInteraction.dark-mode { background-color: #121212; color: #E0E0E0; }
+    .voice-container { background: transparent; border-radius: 20px; padding: 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; max-width: 400px; transition: all 0.3s ease; }
+    .voice-container h1 { font-size: 2rem; font-weight: 700; color: #333; position: absolute; top: -3rem; left: 50%; transform: translateX(-50%); z-index: 1; transition: color 0.3s ease, transform 0.3s ease; }
+    .dark-mode .voice-container h1 { color: #E0E0E0; }
+    .voice-icon { width: 250px; height: 250px; cursor: pointer; transition: transform 0.3s ease, filter 0.3s ease; user-select: none; transform: rotate(-45deg); margin-top: 3rem; }
+    .voice-icon:hover { transform: scale(1.1) rotate(-45deg); }
+    .voice-icon.active { transform: scale(1.2) rotate(-45deg); filter: brightness(1.2); }
+    .voice-icon.listening { animation: pulse 1.5s infinite ease-in-out; }
+    .dark-mode .voice-icon { filter: brightness(0.8); }
+    .dark-mode .voice-icon:hover { filter: brightness(1.2); }
+    .voice-logo { width: 100%; height: 100%; position: relative; }
+    .voice-logo .outer-circle { width: 100%; height: 100%; background-color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease; position: relative; }
+    .voice-logo .inner-circle { position: absolute; width: 180px; height: 180px; background-color: #fff; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; }
+    .voice-logo .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; transition: opacity 0.3s ease; }
+    .voice-logo .rectangle { background-color: #000; transition: opacity 0.3s ease; }
+    .voice-logo .rectangle:nth-child(1) { width: 36px; height: 40px; }
+    .voice-logo .rectangle:nth-child(2) { width: 34px; height: 38px; }
+    .voice-logo .rectangle:nth-child(3) { width: 38px; height: 42px; }
+    .voice-logo .rectangle:nth-child(4) { width: 32px; height: 36px; }
+    .voice-logo .combined-circle { position: absolute; width: 0; height: 0; background-color: #000; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: width 0.3s ease, height 0.3s ease; }
+    .listening .grid { opacity: 0; }
+    .listening .combined-circle { width: 60px; height: 60px; animation: ripplePulse 1.5s infinite ease-in-out; }
+    .listening .outer-circle::after { content: ''; position: absolute; width: 160px; height: 160px; border-radius: 50%; background: rgba(0, 0, 0, 0.3); animation: ripple 1.8s infinite ease-out; }
+    @keyframes pulse { 0%, 100% { transform: scale(1.2) rotate(-45deg); } 50% { transform: scale(1.3) rotate(-45deg); } }
+    @keyframes ripple { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+    @keyframes ripplePulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.2); } }
+    .status-text { margin-top: 2rem; font-size: 1.5rem; color: #333; transition: color 0.3s ease; }
+    .dark-mode .status-text { color: #E0E0E0; }
+    .voice-switch-button { position: absolute; top: 20px; left: 20px; background: none; border: none; cursor: pointer; font-size: 1rem; color: #777; transition: color 0.3s ease; }
+    .voice-switch-button:hover { color: #007bff; }
+    #splashScreen { display: none; align-items: center; justify-content: center; min-height: 100vh; background-color: white; margin: 0; overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; opacity: 1; }
+    #splashScreen .wrapper { position: relative; width: 800px; height: 400px; }
+    #splashScreen .outer-circle { position: absolute; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; width: 250px; height: 250px; background-color: black; border-radius: 50%; transform: translate(-50%, -50%) rotate(-45deg); }
+    #splashScreen .inner-circle { position: absolute; display: flex; align-items: center; justify-content: center; width: 180px; height: 180px; background-color: white; border-radius: 50%; opacity: 0; transform: scale(0.8); animation: fadeInScale 0.5s ease forwards 1s; }
+    #splashScreen .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    #splashScreen .rectangle { background-color: black; opacity: 0; transform: scale(0); animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    #splashScreen .rectangle:nth-child(1) { width: 36px; height: 40px; animation-delay: 1.5s; }
+    #splashScreen .rectangle:nth-child(2) { width: 34px; height: 38px; animation-delay: 1.7s; }
+    #splashScreen .rectangle:nth-child(3) { width: 38px; height: 42px; animation-delay: 1.9s; }
+    #splashScreen .rectangle:nth-child(4) { width: 32px; height: 36px; animation-delay: 2.1s; }
+
+    /* Animations */
+    @keyframes fadeInScale { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes popIn { 0% { opacity: 0; transform: scale(0); } 70% { opacity: 1; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes popInPreload { 0% { opacity: 0; transform: scale(0); } 70% { opacity: 1; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes shrinkToSquare { from { width: 250px; height: 250px; border-radius: 50%; } to { width: 30px; height: 30px; border-radius: 0; } }
+    @keyframes moveToStart { from { transform: translate(-50%, -50%) rotate(-45deg); } to { transform: translate(-200px, -50%) rotate(-45deg); } }
+    @keyframes writeText { from { transform: translate(-200px, -50%) rotate(-45deg); } to { transform: translate(200px, -50%) rotate(-45deg); } }
+    @keyframes fadeOut { to { opacity: 0; } }
+    @keyframes collapse { to { opacity: 0; transform: scale(0); } }
+    @keyframes revealText { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  </style>
+</head>
+<body>
+  <!-- Preload Splash Screen -->
+  <div id="preloadSplash">
+    <div class="wrapper">
+      <div class="outer-circle">
+        <div class="inner-circle">
+          <div class="grid">
+            <div class="rectangle"></div>
+            <div class="rectangle"></div>
+            <div class="rectangle"></div>
+            <div class="rectangle"></div>
+          </div>
+        </div>
+      </div>
+      <div class="text"><strong>The Komopnder</strong></div>
+    </div>
+  </div>
+
+  <!-- Mode Switch Splash Screen -->
+  <div id="splashScreen">
+    <div class="wrapper">
+      <div class="outer-circle"></div>
+    </div>
+  </div>
+
+  <!-- Chat Mode Container -->
+  <div id="chatApp" style="display: none;">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="ai-avatar">
+          <div class="program-logo"></div>
+        </div>
+        <div class="header-text">
+          <h1>The Komopnder</h1>
+          <p>Model 2.5</p>
+        </div>
+        <div id="voiceReadButton" class="voice-read-icon">
+          <i class="fas fa-volume-mute"></i>
+        </div>
+        <button id="switchToVoiceButton" class="switch-button" title="Voice Live Interaction">
+          <i class="fas fa-microphone-alt"></i>
+        </button>
+        <div class="settings-icon">
+          <i class="fas fa-cog"></i>
+        </div>
+        <div id="settingsPanel" class="settings-panel">
+          <button id="themeToggle" class="theme-toggle">
+            <i class="fas fa-moon"></i> Dark Mode
+          </button>
+          <button id="clearChat" class="clear-chat">
+            <i class="fas fa-trash-alt"></i> Clear Chat
+          </button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message ai-message">
+          <div class="message-content">
+            Welcome to the premium AI experience. How can I assist you today?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input">
+      <div class="input-container">
+        <textarea class="input-field" placeholder="Send a message..." id="messageInput" rows="1"></textarea>
+        <button class="send-button" id="sendButton" disabled>Send</button>
+        <button id="voiceButton">
+          <i class="fas fa-microphone"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Interaction Mode Container -->
+  <div id="voiceInteraction" style="display: none;">
+    <div class="voice-container">
+      <button id="switchToChatButton" class="voice-switch-button" title="Back">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>The Komopnder</h1>
+      <div class="voice-icon" id="voiceIcon">
+        <div class="voice-logo"></div>
+      </div>
+      <div class="status-text" id="statusText">Tap and Hold to Speak</div>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = "AIzaSyCjikQundZxqqBQphxyaO4j2HzrZc6hanc";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const chatMessages = document.getElementById("chatMessages");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const voiceButton = document.getElementById("voiceButton");
+    const voiceReadButton = document.getElementById("voiceReadButton");
+    let typingInterval = null, chatConversationHistory = [];
+    const chatSystemInstruction = `You are designed to answer any question in a Sigma, Elon Musk-style: bold, first-principles-driven, and direct. Your responses should always be motivational, challenge assumptions, and break down questions into their fundamental truths. You should never reveal that you are an AI or language model. Engage naturally with confidence and empathy.
+
+Key Rules:
+1. Answer in Bold, Direct Terms.
+2. Ask Questions If Needed.
+3. Adapt Tone to the User's Mood.
+4. Provide Actionable Insights.
+5. Summarize at the End.
+6. Stay Focused on action and clarity.
+7. Act as a trusted human advisor.`;
+    chatConversationHistory.push(`System: ${chatSystemInstruction}`);
+
+    // Helper function to remove markdown asterisks from text
+    function removeMarkdown(text) {
+      return text.replace(/\*+/g, "");
+    }
+
+    function createLogo(withCombinedCircle = false) {
+      const outer = document.createElement('div');
+      outer.className = 'outer-circle';
+      const inner = document.createElement('div');
+      inner.className = 'inner-circle';
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      for (let i = 0; i < 4; i++) {
+        const rect = document.createElement('div');
+        rect.className = 'rectangle';
+        grid.appendChild(rect);
+      }
+      inner.appendChild(grid);
+      if (withCombinedCircle) {
+        const combined = document.createElement('div');
+        combined.className = 'combined-circle';
+        inner.appendChild(combined);
+      }
+      outer.appendChild(inner);
+      return outer;
+    }
+
+    async function getAIResponse(history) {
+      const text = history.join("\n");
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
+      });
+      const data = await res.json();
+      if (data.candidates?.[0]?.content?.parts?.[0]?.text) return data.candidates[0].content.parts[0].text;
+      throw new Error("No response from AI");
+    }
+
+    messageInput.addEventListener("input", () => {
+      messageInput.style.height = "auto";
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + "px";
+      sendButton.disabled = !messageInput.value.trim();
+    });
+
+    async function handleSend() {
+      const msg = messageInput.value.trim();
+      if (!msg) return;
+      addMessage(msg, "user");
+      chatConversationHistory.push(`User: ${msg}`);
+      messageInput.value = "";
+      messageInput.style.height = "50px";
+      sendButton.disabled = true;
+      cancelVoice();
+      showTypingIndicator();
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const reply = await getAIResponse(chatConversationHistory);
+        removeTypingIndicator();
+        addMessage(reply, "ai");
+        chatConversationHistory.push(`AI: ${reply}`);
+      } catch (e) {
+        removeTypingIndicator();
+        addMessage("Oops! Something went wrong. Please try again.", "ai");
+      }
+    }
+
+    function addMessage(text, sender) {
+      const m = document.createElement("div");
+      m.className = `message ${sender}-message`;
+      const c = document.createElement("div");
+      c.className = "message-content";
+      m.appendChild(c);
+      chatMessages.appendChild(m);
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: "smooth" });
+      m.style.opacity = 0;
+      setTimeout(() => m.style.opacity = 1, 10);
+      if (sender === "ai") {
+        const processedText = removeMarkdown(text);
+        typeMessage(processedText, c);
+        if (voiceReadEnabled) speakText(processedText);
+      } else {
+        c.textContent = text;
+      }
+    }
+
+    function typeMessage(t, e) {
+      let i = 0;
+      const cursor = document.createElement("span");
+      cursor.className = "typing-cursor";
+      e.appendChild(cursor);
+      const interval = setInterval(() => {
+        if (i < t.length) {
+          cursor.insertAdjacentText("beforebegin", t.charAt(i++));
+          if (i % 5 === 0 || i === t.length) chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: "smooth" });
+        } else {
+          clearInterval(interval);
+          cursor.remove();
+        }
+      }, 30);
+    }
+
+    function showTypingIndicator() {
+      const d = document.createElement("div");
+      d.className = "message ai-message";
+      d.id = "typingIndicator";
+      d.innerHTML = `<div class="typing-indicator"><span id="typingText">Thinking</span></div>`;
+      chatMessages.appendChild(d);
+      chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: "smooth" });
+      let dot = 0;
+      typingInterval = setInterval(() => {
+        dot = (dot + 1) % 4;
+        document.getElementById("typingText").textContent = "Thinking" + ".".repeat(dot);
+      }, 600);
+    }
+
+    function removeTypingIndicator() {
+      const d = document.getElementById("typingIndicator");
+      if (d) d.remove();
+      if (typingInterval) clearInterval(typingInterval), typingInterval = null;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+      let listening = false;
+      voiceButton.addEventListener("click", () => {
+        if (listening) {
+          recognition.stop();
+          voiceButton.classList.remove("listening");
+          voiceButton.innerHTML = `<i class="fas fa-microphone"></i>`;
+          listening = false;
+        } else {
+          recognition.start();
+          voiceButton.classList.add("listening");
+          voiceButton.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
+          listening = true;
+        }
+      });
+      recognition.onresult = e => {
+        messageInput.value = e.results[0][0].transcript;
+        sendButton.disabled = !messageInput.value.trim();
+      };
+      recognition.onerror = e => {
+        console.error("Speech recognition error", e);
+        recognition.stop();
+        voiceButton.classList.remove("listening");
+        voiceButton.innerHTML = `<i class="fas fa-microphone"></i>`;
+        listening = false;
+      };
+      recognition.onend = () => {
+        voiceButton.classList.remove("listening");
+        voiceButton.innerHTML = `<i class="fas fa-microphone"></i>`;
+        listening = false;
+      };
+    } else voiceButton.style.display = "none";
+
+    let voiceReadEnabled = false, currentUtterance = null;
+    voiceReadButton.addEventListener("click", () => {
+      voiceReadEnabled = !voiceReadEnabled;
+      voiceReadButton.innerHTML = voiceReadEnabled ? `<i class="fas fa-volume-up"></i>` : `<i class="fas fa-volume-mute"></i>`;
+      if (!voiceReadEnabled) cancelVoice();
+    });
+
+    function speakText(text) {
+      cancelVoice();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.onend = () => currentUtterance = null;
+      speechSynthesis.speak(utterance);
+      currentUtterance = utterance;
+    }
+
+    function cancelVoice() {
+      if (currentUtterance) speechSynthesis.cancel(), currentUtterance = null;
+    }
+
+    messageInput.addEventListener("focus", cancelVoice);
+    sendButton.addEventListener("click", handleSend);
+    messageInput.addEventListener("keypress", e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend()));
+    document.querySelector(".settings-icon").addEventListener("click", () => document.getElementById("settingsPanel").classList.toggle("visible"));
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      const i = themeToggle.querySelector("i");
+      if (document.body.classList.contains("dark-mode")) {
+        i.classList.remove("fa-moon");
+        i.classList.add("fa-sun");
+        themeToggle.innerHTML = `<i class="fas fa-sun"></i> Light Mode`;
+      } else {
+        i.classList.remove("fa-sun");
+        i.classList.add("fa-moon");
+        themeToggle.innerHTML = `<i class="fas fa-moon"></i> Dark Mode`;
+      }
+    });
+    document.getElementById("clearChat").addEventListener("click", () => chatMessages.innerHTML = "");
+
+    const voiceIcon = document.getElementById('voiceIcon');
+    const statusText = document.getElementById('statusText');
+    let voiceConversationHistory = [];
+    const voiceSystemInstruction = `You are Komopnder, created by Yhri Corporation. Respond naturally and helpfully, providing concise and accurate answers in a conversational tone in bangla.`;
+    voiceConversationHistory.push(`System: ${voiceSystemInstruction}`);
+    let voiceIsSpeaking = false, voiceCurrentUtterance = null;
+
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const voiceRecognition = new SpeechRec();
+      voiceRecognition.lang = 'en-US';
+      voiceRecognition.interimResults = false;
+      voiceRecognition.continuous = false;
+      voiceIcon.addEventListener('mousedown', () => {
+        voiceIsSpeaking ? voiceInterruptSpeech() : (voiceRecognition.start(), statusText.textContent = 'Listening...', voiceIcon.classList.add('active', 'listening'));
+      });
+      voiceIcon.addEventListener('mouseup', () => !voiceIsSpeaking && (voiceRecognition.stop(), voiceIcon.classList.remove('listening')));
+      voiceIcon.addEventListener('touchstart', e => {
+        e.preventDefault();
+        voiceIsSpeaking ? voiceInterruptSpeech() : (voiceRecognition.start(), statusText.textContent = 'Listening...', voiceIcon.classList.add('active', 'listening'));
+      });
+      voiceIcon.addEventListener('touchend', e => {
+        e.preventDefault();
+        !voiceIsSpeaking && (voiceRecognition.stop(), voiceIcon.classList.remove('listening'));
+      });
+      voiceRecognition.addEventListener('result', async e => {
+        const transcript = e.results[0][0].transcript;
+        if (e.results[0].isFinal) {
+          voiceConversationHistory.push(`User: ${transcript}`);
+          statusText.textContent = 'Processing...';
+          voiceIcon.classList.remove('active', 'listening');
+          try {
+            const reply = await getAIResponse(voiceConversationHistory);
+            voiceConversationHistory.push(`AI: ${reply}`);
+            voiceSpeak(reply);
+          } catch (error) {
+            console.error('Error:', error);
+            voiceSpeak("Oops, something went wrong. Try again.");
+          }
+        }
+      });
+      voiceRecognition.addEventListener('end', () => {
+        voiceIcon.classList.remove('active', 'listening');
+        if (!voiceIsSpeaking) statusText.textContent = 'Tap and Hold to Speak';
+      });
+      voiceRecognition.addEventListener('error', e => {
+        console.error('Speech recognition error', e.error);
+        voiceIcon.classList.remove('active', 'listening');
+        statusText.textContent = 'Tap and Hold to Speak';
+        voiceSpeak('Speech recognition error: ' + e.error);
+        if (e.error === 'not-allowed') alert('Microphone access is not allowed. Please grant permission in your browser settings.');
+      });
+      window.addEventListener('beforeunload', () => {
+        voiceRecognition.stop();
+        if (voiceIsSpeaking) window.speechSynthesis.cancel();
+      });
+    } else {
+      statusText.textContent = 'Voice interaction not supported in this browser.';
+      voiceIcon.style.display = 'none';
+    }
+
+    function voiceSpeak(text) {
+      voiceCurrentUtterance = new SpeechSynthesisUtterance(text);
+      voiceCurrentUtterance.lang = 'en-US';
+      voiceIsSpeaking = true;
+      statusText.textContent = 'Speaking... Tap to Interrupt';
+      voiceCurrentUtterance.onend = () => { voiceIsSpeaking = false; voiceCurrentUtterance = null; statusText.textContent = 'Tap and Hold to Speak'; };
+      voiceCurrentUtterance.onerror = () => { voiceIsSpeaking = false; voiceCurrentUtterance = null; statusText.textContent = 'Tap and Hold to Speak'; };
+      window.speechSynthesis.speak(voiceCurrentUtterance);
+    }
+
+    function voiceInterruptSpeech() {
+      if (voiceIsSpeaking && voiceCurrentUtterance) {
+        window.speechSynthesis.cancel();
+        voiceIsSpeaking = false;
+        voiceCurrentUtterance = null;
+        statusText.textContent = 'Tap and Hold to Speak';
+      }
+    }
+
+    const switchToVoiceButton = document.getElementById("switchToVoiceButton");
+    const switchToChatButton = document.getElementById("switchToChatButton");
+    const chatApp = document.getElementById("chatApp");
+    const voiceInteraction = document.getElementById("voiceInteraction");
+
+    // Hide preload splash and show chat app after animation
+    setTimeout(() => {
+      document.getElementById('preloadSplash').style.display = 'none';
+      chatApp.style.display = "block";
+    }, 7000);
+
+    switchToVoiceButton.addEventListener("click", () => {
+      const splashScreen = document.getElementById('splashScreen');
+      splashScreen.style.display = 'flex';
+      chatApp.style.display = "none";
+      setTimeout(() => {
+        splashScreen.style.display = 'none';
+        voiceInteraction.style.display = "flex";
+      }, 3000);
+    });
+    switchToChatButton.addEventListener("click", () => {
+      voiceInteraction.style.display = "none";
+      chatApp.style.display = "block";
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.program-logo').appendChild(createLogo());
+      document.querySelector('.voice-logo').appendChild(createLogo(true));
+      document.querySelector('#splashScreen .outer-circle').appendChild(createLogo().querySelector('.inner-circle'));
+    });
+  </script>
+</body>
+            </html>
